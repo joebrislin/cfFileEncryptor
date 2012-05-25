@@ -31,6 +31,11 @@ component accessors="true" {
 			}
 		}
 
+		// create directory if it does not exist
+		if( !directoryExists( this.getDirectoryPath() ) ){
+			directoryCreate( this.getDirectoryPath() );
+		}
+
 		return this;
 	}
 

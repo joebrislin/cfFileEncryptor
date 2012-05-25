@@ -11,4 +11,14 @@ component accessors="true" {
 
 		return this;
 	}
+
+	public struct function uploadFile(){
+
+		return {};
+	}
+
+	private string function encryptFile(){
+
+		return "";
+	}
 }

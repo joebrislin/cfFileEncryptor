@@ -6,11 +6,11 @@ component accessors="true" {
 
 	property name="key";
 
-	property name="algorithm" default="a"; // Optional Parameters for encryptBinary
+	property name="algorithm"; // Optional Parameters for encryptBinary
 
-	property name="IVorSalt" default="b"; // Optional Parameters for encryptBinary
+	property name="IVorSalt" default=""; // Optional Parameters for encryptBinary
 
-	property name="iterations" default="c"; // Optional Parameters for encryptBinary
+	property name="iterations" default=""; // Optional Parameters for encryptBinary
 
 	/**
 	 * The constructor dynamically handles setting any params passed
@@ -24,12 +24,17 @@ component accessors="true" {
 
 		variables.directoryPath = expandPath("./uploads");
 		variables.key = hash( application.getApplicationSettings()["name"] );
+		variables.algorithm = "CFMX_COMPAT";
 
 		for(var i=1; i <= arrayLen(props); ++i ){
 			if( structKeyExists(config,props[i].name) ){
 				_setProperty(props[i].name,arguments.config[props[i].name]);
 			}
 		}
+
+		// TODO: Need to handle for different encryption configurations - See Reference Page :: http://help.adobe.com/en_US/ColdFusion/9.0/CFMLRef/WSc3ff6d0ea77859461172e0811cbec22c24-6e75.html
+		// Generate Key if Algorithm is NOT CFMX_COMPAT - otherwise use key passed.
+		if( this.getAlgorithm() neq "CFMX_COMPAT" ) this.setKey( generateSecretKey( this.getAlgorithm() ) ); 
 
 		// create directory if it does not exist
 		if( !directoryExists( this.getDirectoryPath() ) ){

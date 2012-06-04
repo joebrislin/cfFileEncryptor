@@ -12,37 +12,68 @@ component accessors="true" {
 		return this;
 	}
 
-	public struct function uploadFile( required String newFile ){
+	public String function uploadFile( required String fileField, String acceptTypes = arrayToList( getSettingsBean().getAllowableExtensions() ) ){
 		// upload file to server and save in memory
-		var _file = fileUpload( "ram://", arguments.newFile, "* ", "makeUnique" );
-	
-		var fileData = _file;
+		try{
+			var _file = fileUpload( "ram://", arguments.fileField, arguments.acceptTypes, "makeUnique" );
+		}catch(Any e){
+			if( e.message contains "The MIME type of the uploaded file" ){
+				throw(message=e.message,detail="The file type uploaded to the server was not an exceptable MIME type.");
+			}else{
+				rethrow;
+			}
+		}
+		var _serverFile = "ram://" & _file.serverFile;
+
+		var fileData = {};
 		// encrypt file currently stored in memory
-		fileData.content = encryptFile( "ram://" & _file.serverFile );
+		fileData.content = encryptFile( _serverFile );
+		fileData.mimeType = _file.contentType & "/" & _file.contentSubType;
+		fileData.fileName = _file.clientFile;
 
-		// TODO: write encrypted data to file
+		// write encrypted data to file
+		var newFile = getUniqueFileName();
+		fileWrite( newFile, serializeJSON(fileData) );
 
-		// TODO: save encrypted file to server path (include MetaData for MIME Type, Original Filename, etc. for rendering out later)
+		// Cleanup File Memory - remove from RAM
+		fileDelete( _serverFile );
 
-		return fileData;
+		return newFile;
 	}
 
-	private Binary function encryptFile(required String localFile){
-		// encrypt data
-		var enc = {};
-		enc.bytes = fileReadBinary( arguments.localFile ); // convert file to binary data
-		enc.key = getSettingsBean().getKey(); // set key
-		enc.algorithm = getSettingsBean().getAlgorithm(); // optional
-		if( len( trim( getSettingsBean().getIVorSalt() ) ) ) enc.IVorSalt = getSettingsBean().getIVorSalt(); // optional
-		if( len( trim( getSettingsBean().getIterations() ) ) ) enc.iterations = getSettingsBean().getIterations(); // optional
+	public Struct function readFile( required String filePath ){
+		var _file = DeserializeJSON( fileRead( arguments.filePath ) );
+		_file.content = decryptFile( _file.content );
 
-		// TODO: Pass ArgumentCollection to encryptBinary method to allow for multiple configurations
-		//var ret = encryptBinary( argumentCollection = enc );
-		var ret = encryptBinary( enc.bytes, enc.key, enc.algorithm );
-		return ret;
+		return _file;
 	}
 
-	private string function decryptFile(){
-		return "";
+	private Binary function decryptFile( required String fileContent ){
+		try{
+			return binaryDecode( arguments.fileContent, getSettingsBean().getBinaryEncoding());
+		}catch(Any e){
+			throw(type="cfFileEncryptor.error.FileDecryptionError", message=e.detail);
+		}
+	}
+
+	private String function encryptFile(required String localFile){
+		try{
+			// encrypt data
+			var _bytes = fileReadBinary( arguments.localFile ); // convert file to binary data
+			return BinaryEncode( _bytes, getSettingsBean().getBinaryEncoding() );
+		}catch(Any e){
+			throw(type="cfFileEncryptor.error.FileEncryptionError", message=e.detail);
+		}
+	}
+
+	private String function getUniqueFileName(){
+		var _fileName = this.getSettingsBean().getDirectoryPath() & "/" & createUUID();
+		
+		// check to see if file name previously exists
+		if( fileExists( _fileName ) ){
+			_fileName = getUniqueFileName(); // recursively try until unique file name is found
+		}
+
+		return _fileName;
 	}
 }

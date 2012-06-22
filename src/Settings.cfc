@@ -31,6 +31,7 @@ component accessors="true" {
 			"image/png",
 			"image/tiff",
 			"image/x-tiff",
+			"application/pdf",
 			"application/postscript",
 			"application/msword",
 			"application/vnd.openxmlformats-officedocument.wordprocessingml.document",

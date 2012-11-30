@@ -14,16 +14,16 @@ component accessors="true" {
 
 	public String function uploadFile( required String fileField, String acceptTypes = arrayToList( getSettingsBean().getAllowableExtensions() ) ){
 		// upload file to server and save in memory
-		try{
-			var _file = fileUpload( "ram://", arguments.fileField, arguments.acceptTypes, "makeUnique" );
-		}catch(Any e){
-			if( e.message contains "The MIME type of the uploaded file" ){
-				throw(message=e.message,detail="The file type uploaded to the server was not an exceptable MIME type.");
-			}else{
-				rethrow;
-			}
-		}
+		var _file = fileUpload( destination="ram://", fileField=arguments.fileField, nameConflict="makeUnique" );
 		var _serverFile = "ram://" & _file.serverFile;
+
+		// check file for acceptable mime type
+		var _fileMimeType = getPageContext().getServletContext().getMimeType(_serverFile);
+		if( !isDefined("_fileMimeType") || listFindNoCase( arguments.acceptTypes, _fileMimeType ) lte 0 ){
+			// Cleanup File Memory - remove from RAM
+			fileDelete( _serverFile );
+			throw(message="The MIME type of the uploaded file was not accepted by the server",detail="The file type uploaded to the server was not an acceptable MIME type.");
+		}
 
 		var fileData = {};
 		// encrypt file currently stored in memory

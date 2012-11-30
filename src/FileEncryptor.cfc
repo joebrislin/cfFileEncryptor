@@ -12,7 +12,14 @@ component accessors="true" {
 		return this;
 	}
 
-	public String function uploadFile( required String fileField, String acceptTypes = arrayToList( getSettingsBean().getAllowableExtensions() ) ){
+	/**
+	* Function to upload your file based on a form field passed
+	* @fileField This is the field used on your form to upload a file
+	* @acceptTypes An array of acceptable mimetypes allowed for this particular file upload. Default is setup in config.
+	* @newFileName A different name for the file that will be utilized in the json saved to the file. This name will be used when you reload the file to the browser. DO NOT PASS File Extension. File extension will be appended based on actual file uploaded.
+	* 
+	*/
+	public String function uploadFile( required String fileField, String acceptTypes = arrayToList( getSettingsBean().getAllowableExtensions() ), String newFileName ){
 		// upload file to server and save in memory
 		var _file = fileUpload( destination="ram://", fileField=arguments.fileField, nameConflict="makeUnique" );
 		var _serverFile = "ram://" & _file.serverFile;
@@ -30,6 +37,7 @@ component accessors="true" {
 		fileData.content = encryptFile( _serverFile );
 		fileData.mimeType = _file.contentType & "/" & _file.contentSubType;
 		fileData.fileName = _file.clientFile;
+		if( structKeyExists( arguments, "newFileName" ) && len( trim( arguments.newFileName ) ) ) fileData.fileName = arguments.newFileName & "." & _file.clientFileExt;
 
 		// write encrypted data to file
 		var newFile = getUniqueFileName();

@@ -25,11 +25,21 @@ component accessors="true" {
 		var _serverFile = "ram://" & _file.serverFile;
 
 		// check file for acceptable mime type
+		/** 
+		NOTE: if the mimetype of a specific file extension is not found, it most likely needs to be added to your server since most applications are not installed on servers
+		ColdFusion - <ColdFusion-home>/runtime/lib/mime.types
+		Railo - <Railo-home>/tomcat/conf/web.xml
+		**/
 		var _fileMimeType = getPageContext().getServletContext().getMimeType(_serverFile);
 		if( !isDefined("_fileMimeType") || listFindNoCase( arguments.acceptTypes, _fileMimeType ) lte 0 ){
 			// Cleanup File Memory - remove from RAM
 			fileDelete( _serverFile );
-			throw(message="The MIME type of the uploaded file was not accepted by the server",detail="The file type uploaded to the server was not an acceptable MIME type.");
+			
+			var _detailMsg = "The file type ";
+			if( isDefined("_fileMimeType") ) _detailMsg &= "(" & _fileMimeType & ") ";
+			_detailMsg &= "uploaded to the server was not an acceptable MIME type.";
+
+			throw(message="The MIME type of the uploaded file was not accepted by the server",detail=_detailMsg);
 		}
 
 		var fileData = {};

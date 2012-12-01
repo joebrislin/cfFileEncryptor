@@ -40,6 +40,7 @@ component accessors="true" {
 			"application/x-download",
 			"application/postscript",
 			"application/msword",
+			"application/vnd.ms-word",
 			"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 			"application/vnd.ms-excel",
 			"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
